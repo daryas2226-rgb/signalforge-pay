@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600&display=swap');
+
+:root {
+  /* Overlay layers */
+  --z-overlay: 400;
+
+  --z-spotlight: 1000; /* Tutorial spotlights/guided help */
+
+  /* System layers */
+  --z-critical: 2000; /* Critical system notifications */
+
+  /* spacing */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-20: 5rem;
+}
+
+:root {
+  --background: hsl(214 42% 97%);
+  --foreground: hsl(220 35% 11%);
+  --surface: hsl(216 38% 94%);
+  --surface-foreground: hsl(220 35% 11%);
+  --sidebar: hsl(219 37% 14%);
+  --sidebar-foreground: hsl(215 35% 95%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220 35% 11%);
+  --popup: hsl(0 0% 100%);
+  --popup-foreground: hsl(220 35% 11%);
+  --primary: hsl(216 88% 51%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(216 35% 90%);
+  --secondary-foreground: hsl(220 30% 16%);
+  --accent: hsl(216 88% 51%);
+  --accent-foreground: hsl(0 0% 100%);
+  --muted: hsl(216 22% 91%);
+  --muted-foreground: hsl(216 14% 42%);
+  --success: hsl(154 57% 39%);
+  --success-foreground: hsl(0 0% 100%);
+  --error: hsl(4 72% 52%);
+  --error-foreground: hsl(0 0% 100%);
+  --warning: hsl(37 92% 49%);
+  --warning-foreground: hsl(30 55% 14%);
+  --info: hsl(216 88% 51%);
+  --info-foreground: hsl(0 0% 100%);
+  --info-hover: hsl(216 88% 46%);
+  --info-active: hsl(216 88% 41%);
+  --border: hsl(216 23% 82%);
+  --font-family-base: "Inter Tight", system-ui, sans-serif;
+  --font-family-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-family-monospace: "IBM Plex Mono", ui-monospace, monospace;
+  --font-family-cursive: cursive;
+  --shadow: 0 1px 2px hsl(220 30% 10% / 0.05);
+  --shadow-md: 0 8px 24px hsl(220 30% 10% / 0.08);
+  --shadow-lg: 0 20px 50px hsl(220 30% 10% / 0.12);
+  --shadow-focus: 0 0 0 3px hsl(216 88% 51% / 0.2);
+  --radius-sm: 0.45rem;
+  --radius: 0.7rem;
+  --radius-md: 0.9rem;
+  --radius-lg: 1.15rem;
+  --radius-full: 999px;
+  --animation-duration-fast: 120ms;
+  --animation-duration-normal: 220ms;
+  --animation-duration-slow: 420ms;
+  --chart-color-1: hsl(216 88% 51%);
+  --chart-color-2: hsl(154 57% 39%);
+  --chart-color-3: hsl(37 92% 49%);
+  --chart-color-4: hsl(268 66% 58%);
+  --chart-color-5: hsl(193 71% 45%);
+}
+
+.dark {
+  --background: hsl(222 43% 7%);
+  --foreground: hsl(215 33% 94%);
+  --surface: hsl(221 36% 10%);
+  --surface-foreground: hsl(215 33% 94%);
+  --sidebar: hsl(222 43% 6%);
+  --sidebar-foreground: hsl(215 33% 94%);
+  --card: hsl(220 34% 11%);
+  --card-foreground: hsl(215 33% 94%);
+  --popup: hsl(220 34% 11%);
+  --popup-foreground: hsl(215 33% 94%);
+  --primary: hsl(214 92% 61%);
+  --primary-foreground: hsl(222 43% 7%);
+  --secondary: hsl(219 27% 17%);
+  --secondary-foreground: hsl(215 30% 90%);
+  --accent: hsl(214 92% 61%);
+  --accent-foreground: hsl(222 43% 7%);
+  --muted: hsl(219 25% 16%);
+  --muted-foreground: hsl(216 14% 66%);
+  --success: hsl(153 61% 49%);
+  --success-foreground: hsl(222 43% 7%);
+  --error: hsl(4 79% 63%);
+  --error-foreground: hsl(222 43% 7%);
+  --warning: hsl(39 96% 58%);
+  --warning-foreground: hsl(222 43% 7%);
+  --info: hsl(214 92% 61%);
+  --info-foreground: hsl(222 43% 7%);
+  --info-hover: hsl(214 92% 66%);
+  --info-active: hsl(214 92% 56%);
+  --border: hsl(218 22% 22%);
+  --shadow: 0 1px 2px hsl(0 0% 0% / 0.28);
+  --shadow-md: 0 12px 30px hsl(0 0% 0% / 0.28);
+  --shadow-lg: 0 28px 60px hsl(0 0% 0% / 0.38);
+  --shadow-focus: 0 0 0 3px hsl(214 92% 61% / 0.24);
+  --chart-color-1: hsl(214 92% 61%);
+  --chart-color-2: hsl(153 61% 49%);
+  --chart-color-3: hsl(39 96% 58%);
+  --chart-color-4: hsl(270 74% 68%);
+  --chart-color-5: hsl(190 73% 55%);
+}
