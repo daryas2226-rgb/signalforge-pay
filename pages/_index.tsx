@@ -142,6 +142,7 @@ export default function Home() {
 
   async function generateBrief() {
     setBriefLoading(true);
+    setBrief(null);
     setBriefError("");
     try {
       const anomalySummary = analysis.anomalies.length
@@ -226,8 +227,8 @@ export default function Home() {
             onChange={e => setSyncPasscode(e.target.value)}
             placeholder="Private sync passcode" aria-label="Private PayPal Sandbox sync passcode"
             className={styles.syncPasscode}/>
-          {source !== "demo" && <Button variant="outline" onClick={useDemoData}>Use demo data</Button>}
-          <Button onClick={syncPayPal} disabled={syncing || syncPasscode.length < 16}>
+          {source !== "demo" && <Button variant="outline" onClick={useDemoData} disabled={briefLoading || syncing}>Use demo data</Button>}
+          <Button onClick={syncPayPal} disabled={syncing || briefLoading || syncPasscode.length < 16}>
             <RefreshCcw size={16} className={syncing ? styles.spin : ""}/>
             {syncing ? "Syncing…" : "Sync PayPal Sandbox"}
           </Button>
@@ -247,7 +248,7 @@ export default function Home() {
           icon={<Upload size={21}/>}
           title="Drop a PayPal-style JSON report"
           subtitle="or click to select · max 2 MB · browser-only parsing"
-          onFilesSelected={importReport}/>
+          onFilesSelected={importReport} disabled={briefLoading || syncing}/>
       </section>
       {importError && <div className={styles.alertBox}><TriangleAlert size={18}/><div><strong>Report import failed</strong><p>{importError}</p></div></div>}
 
@@ -344,7 +345,7 @@ export default function Home() {
       <section className={styles.aiPanel}>
         <div className={styles.aiHeader}>
           <div><span className={styles.kicker}>AI decision layer</span><h2>Revenue Recovery Brief</h2></div>
-          <Button size="lg" onClick={generateBrief} disabled={briefLoading || (source === "paypal-sandbox" && syncTransactionCount === 0)}>
+          <Button size="lg" onClick={generateBrief} disabled={briefLoading || syncing || (source === "paypal-sandbox" && syncTransactionCount === 0)}>
             <BrainCircuit size={17}/>{briefLoading ? "Reasoning…" : "Generate AI brief"}
           </Button>
         </div>

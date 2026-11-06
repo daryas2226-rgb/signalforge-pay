@@ -2,63 +2,66 @@
 
 **AI Revenue Decision Agent — PayPal AI Hackathon 2026**
 
-An evidence-first financial insights prototype for small businesses. Analyze payment trends, refunds, reversals and charges; identify unusual periods; request an AI-powered revenue brief with three prioritized investigation steps.
+An evidence-first financial insights prototype for small businesses. Analyze payment trends, refunds, reversals and fees; identify unusual periods; request an AI revenue brief with three prioritized investigation steps.
 
-Live demo: https://signalforge-pay.floot.app
+- [Live demo](https://signalforge-pay.floot.app)
+- [Source](https://github.com/daryas2226-rgb/signalforge-pay)
+- [Devpost project](https://devpost.com/software/signalforge-pay)
 
-## Current status (October 2026)
+## Verified status — 6 November 2026
 
-- Public **synthetic-data demo** works. Floot AI generates an explanation and suggested actions from computed metrics.
-- Client-only JSON import accepts PayPal Transaction Search-shaped data and recalculates metrics without Sandbox access. A clearly synthetic sample report is offered on the site.
-- PayPal Sandbox OAuth and Transaction Search integration is written. **End-to-end synchronization of real Sandbox test transactions is not yet verified.** The owner still needs to connect Sandbox credentials.
-- No real money or live PayPal credentials are involved. Sandbox payment data is protected behind a server-side owner-only sync passcode.
-- AI requests use a shared PostgreSQL hourly budget limit to minimize unexpected Floot AI credit consumption.
+- The public synthetic-data demo and browser-only PayPal-format JSON import are available. Both are visibly labeled; imported reports have unverified provenance.
+- Existing PayPal Sandbox credentials are connected securely. A real owner-only check successfully authenticated with PayPal but still received `PAYPAL_REPORTING_SCOPE_MISSING` after attempting the stale-token refresh flow. The current app token lacks `https://uri.paypal.com/services/reporting/search/read`. **Real Sandbox transaction synchronization is not verified and no returned transaction data is claimed.**
+- The prototype remains usable with synthetic data and JSON imports while the matching Sandbox REST app's Transaction Search permission is resolved. API permission is controlled by PayPal, not by changing dashboard calculations.
+- Sandbox reporting uses a private server-side sync passcode. No Live PayPal endpoint, real charge, capture, refund or money movement is used.
+- AI requests have a durable shared PostgreSQL hourly budget. Incomplete model output is rejected; no fabricated fallback brief is shown.
+- Four targeted Jasmine spec files passed and Floot TypeScript checks passed before publication.
 
-## Stack
+## Stack and source
 
-- React + TypeScript
-- Floot hosting and serverless API endpoints
-- Floot AI (GPT-6 Luna)
-- PayPal Sandbox: OAuth 2.0 client credentials and Transaction Search API
-- Zod validation and SuperJSON transport
-- Floot-managed PostgreSQL for request budgets
+React, TypeScript, Floot hosting/serverless endpoints, Floot AI (`gpt-6-luna`), PayPal Sandbox OAuth 2.0 and Transaction Search, Zod, SuperJSON, PostgreSQL/Kysely.
 
-## Key modules
+```text
+components/                          UI kit and global context providers
+pages/_index.tsx                     Dashboard, source labels and JSON upload
+endpoints/paypal-sync_POST.ts        Public endpoint adapter, no-store responses
+helpers/paypalSyncService.tsx        Shared private Sandbox sync + token refresh
+helpers/flootAppExports.tsx          Editor-owner-only operational verification
+endpoints/revenue-brief_POST.ts      AI request budget and validated brief
+endpoints/*.schema.ts                Validated inputs and typed client calls
+helpers/validateRevenueBrief.tsx     Strict AI response schema
+helpers/paypalFinancialEvents.tsx    Conservative merchant T-code classification
+helpers/parsePayPalReport.tsx        Client-only report import
+helpers/*.spec.tsx                   Jasmine regression tests
+helpers/db.tsx, helpers/schema.tsx   Floot database wiring and schema
+static/sample-sandbox-report.json    Clearly synthetic test transactions
+static/__dev/                       Original working notes and editor dependencies
+```
 
-- `pages/_index.tsx` — public dashboard and clearly marked demo dataset
-- `endpoints/paypal-sync_POST.ts` — private PayPal Sandbox reporting sync
-- `endpoints/revenue-brief_POST.ts` — structured AI analysis with rate limits
-- `endpoints/*.schema.ts` — request validation and typed client APIs
-- `helpers/db.tsx`, `helpers/schema.tsx` — Floot-generated database connection and schema
-- `helpers/paypalFinancialEvents.tsx` and `helpers/paypalFinancialEvents.spec.tsx` — isolated merchant T-code logic and Jasmine regression tests for sales, refunds, chargebacks, holds, payouts and invalid amounts
-- `helpers/parsePayPalReport.tsx` and `helpers/parsePayPalReport.spec.tsx` — browser-only import logic and validation tests
-- `static/sample-sandbox-report.json` — synthetic test transactions
-
-## Configuration
-
-Server-side only:
-
-- `PAYPAL_CLIENT_ID`: PayPal Developer **Sandbox** REST app client ID.
-- `PAYPAL_CLIENT_SECRET`: Sandbox secret.
-- `SIGNALFORGE_SYNC_PASSCODE`: long private owner-only passcode to request PayPal reporting data.
-- `FLOOT_DATABASE_URL`: provisioned by Floot for request budget persistence.
-- Floot AI is configured by the Floot environment.
-
-Do **not** commit these secret values or use Live PayPal credentials.
+The old `github-export` page containing an outdated duplicate source snapshot has been removed. The repository is the source location. Files under `static/__dev/` are historical/editor working notes, not assertions that a submission is complete.
 
 ## Run and test
 
-The current source runs in the **Floot** managed app environment, which provides its serverless endpoint routing, database wiring, AI SDK and environment variables. To reproduce:
+This application runs in the **Floot managed environment**, which provides routing, `@floot/ai`, `@floot/apps`, database wiring and secure resources. The source export does not claim a standalone npm server.
 
-1. Import or recreate all project source files into a compatible Floot project.
-2. Provision a Floot-managed database and migrate the `ai_request_budgets` table (see below).
-3. Publish to a Floot subdomain to run the public demo.
-4. Generate a Revenue Recovery Brief with the labeled synthetic data.
-5. Download `/sample-sandbox-report.json` and upload it into the importer to verify calculations on transaction records.
-6. To test private merchant sync, connect Sandbox app keys and a unique passcode through secure environment configuration.
-7. Generate Sandbox transactions in the matching merchant account, allow for PayPal reporting delays, and attempt sync.
+1. Import the source folders and `base.css` into a compatible Floot project; use `static/__dev/dependencies.json` for the dependency map.
+2. Provision the managed PostgreSQL resource and create the budget table below.
+3. Keep the environment variables server-side, using Floot's secure resource configuration.
+4. Run the four targeted specs and TypeScript check, then publish.
+5. Open the public app. Generate a Revenue Recovery Brief from the labeled synthetic data.
+6. Download `/sample-sandbox-report.json`, import it and inspect the changed metrics.
+7. For private reporting, enable Transaction Search on the **same Sandbox REST app** as the stored credentials, then use the owner passcode. PayPal reporting can be delayed; an empty successful report is not evidence of transaction activity.
 
-### DB migration
+Targeted Jasmine specs: `helpers/paypalSyncFlow.spec.tsx`, `helpers/parsePayPalReport.spec.tsx`, `helpers/paypalFinancialEvents.spec.tsx`, `helpers/validateRevenueBrief.spec.tsx`. They cover wrong-passcode rejection, stale OAuth refresh, persistent missing permissions, error privacy, restricted diagnostic access, classification/import behavior and malformed AI output. Network calls in tests are mocked; live checks are reported separately.
+
+### Server configuration
+
+- `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`: **Sandbox** REST app credentials.
+- `SIGNALFORGE_SYNC_PASSCODE`: a long private owner-only password for reporting.
+- `FLOOT_DATABASE_URL`: managed database URL.
+- Floot AI is supplied by the environment.
+
+The empty `.env.example` documents names only. Never commit real values or use Live credentials.
 
 ```sql
 CREATE TABLE IF NOT EXISTS ai_request_budgets (
@@ -70,16 +73,20 @@ CREATE TABLE IF NOT EXISTS ai_request_budgets (
 );
 ```
 
-## Data methodology and limitations
+### Private operational check
 
-The demo is synthetic and must never be represented as real merchant performance. Financial metrics are estimates, not accounting statements. PayPal Transaction Search **balance-affecting** records don't provide complete checkout failure attempts; no real failure rate is inferred from them. Event classifications use PayPal T-codes; merchant refunds and reversals are tracked separately from purchase income, and mixed currency reports are rejected rather than summed. Cash-flow holds, detailed disputes, and other accounting events are outside this prototype's current coverage. AI suggestions are hypotheses to validate, not financial advice.
+The published `verifySandboxSync({days:30})` function is callable through Floot's authenticated owner/editor MCP facility only. It refuses other apps and non-owner callers, uses the existing passcode-protected service, and returns only environment, status/error code and counts. It never returns tokens, passwords, records or amounts. There is no public diagnostic HTTP endpoint.
 
-Documentation: https://developer.paypal.com/reports/reference/t-codes/
+## Methodology, privacy and limits
 
-## License
+The demo is synthetic and is not real merchant performance. Financial metrics are estimates, not accounting statements. Transaction Search balance-affecting records do not cover complete checkout failures, so imported/Sandbox data is never presented as a measured checkout failure rate. Event classification uses PayPal T-codes; refunds and reversals remain separate from gross sales. Mixed currencies are rejected. Cash-flow holds, detailed dispute workflows and other accounting events are outside current scope.
 
-MIT license. See LICENSE at the root. No secrets are included.
+Raw imported transaction rows are parsed in browser memory. Only derived signals go to the AI endpoint after the user requests a brief. The public demo has no per-user persistence or account system; do not upload confidential customer reports. The AI provides hypotheses and reversible next steps, not established causes or calibrated probabilities. Forecasts are simple recent-slope extrapolations.
 
-## Attribution and chronology
+Official references: [Transaction Search](https://developer.paypal.com/docs/api/transaction-search/v1/), [OAuth](https://developer.paypal.com/reference/get-an-access-token/), [T-codes](https://developer.paypal.com/reports/reference/t-codes/).
 
-Earlier SignalForge AI concept existed before October 2026. SignalForge Pay was built as a distinct PayPal-specific demo during the 2026 hackathon, adding the reporting connector, payment dashboard, AI revenue brief, source labeling, data safety controls and test-focused interaction.
+## Attribution and license
+
+An earlier SignalForge AI concept predated this project. SignalForge Pay is the distinct PayPal-specific version built during the 2026 event, adding reporting, payment metrics, a revenue brief, data-source labeling and safety controls. AI tools assisted with implementation and tests.
+
+MIT — see [LICENSE](LICENSE). Third-party components retain their respective licenses.

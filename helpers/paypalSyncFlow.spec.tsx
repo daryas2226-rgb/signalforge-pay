@@ -1,5 +1,6 @@
 import superjson from "superjson";
 import { handle } from "../endpoints/paypal-sync_POST";
+import { verifySandboxSync } from "./flootAppExports";
 
 const code = (event:string, value:string, date:string, fee = "0") => ({
   transaction_info: {
@@ -66,5 +67,56 @@ describe("PayPal server sync integration (mocked API, NO real money)", () => {
     expect(output.periods.reduce((x:number,y:any)=>x+y.fees,0)).toBe(3);
     expect(output.periods.reduce((x:number,y:any)=>x+y.disputes,0)).toBe(1);
     expect(fake).toHaveBeenCalledTimes(2);
+  });
+  it("refreshes a stale Sandbox grant once before reading transactions", async () => {
+    const urls: string[] = [];
+    const fake = spyOn(globalThis, "fetch").and.callFake(async (input: RequestInfo | URL) => {
+      const url = String(input); urls.push(url);
+      if (url.includes("/token/terminate")) return new Response(null, { status: 204 });
+      if (url.includes("/oauth2/token")) return new Response(JSON.stringify({
+        access_token: "MOCK-TOKEN",
+        scope: urls.length === 1 ? "unrelated-scope" : "https://uri.paypal.com/services/reporting/search/read",
+      }));
+      return new Response(JSON.stringify({ total_pages: 1, transaction_details: [] }));
+    });
+    const response = await handle(new Request("https://test.local/_api/paypal-sync", {
+      method: "POST", body: superjson.stringify({ days: 30, syncPasscode: "testing-only-private-sync-passcode" }),
+    }));
+    expect(response.status).toBe(200);
+    expect(urls[1]).toContain("/token/terminate");
+    expect(urls[3]).toContain("/reporting/transactions");
+    expect(fake).toHaveBeenCalledTimes(4);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("reports a missing scope after refresh without exposing token data", async () => {
+    const fake = spyOn(globalThis, "fetch").and.callFake(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/token/terminate")) return new Response(null, { status: 204 });
+      return new Response(JSON.stringify({ access_token: "MOCK-PRIVATE-TOKEN", scope: "unrelated-scope" }));
+    });
+    const response = await handle(new Request("https://test.local/_api/paypal-sync", {
+      method: "POST", body: superjson.stringify({ days: 30, syncPasscode: "testing-only-private-sync-passcode" }),
+    }));
+    const text = await response.text();
+    expect(response.status).toBe(502);
+    expect(text).toContain("PAYPAL_REPORTING_SCOPE_MISSING");
+    expect(text).not.toContain("MOCK-PRIVATE-TOKEN");
+    expect(fake).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not expose provider error bodies", async () => {
+    spyOn(globalThis, "fetch").and.resolveTo(new Response("PRIVATE-PROVIDER-DETAIL", { status: 401 }));
+    const log = spyOn(console, "error");
+    const response = await handle(new Request("https://test.local/_api/paypal-sync", {
+      method: "POST", body: superjson.stringify({ days: 30, syncPasscode: "testing-only-private-sync-passcode" }),
+    }));
+    expect(await response.text()).not.toContain("PRIVATE-PROVIDER-DETAIL");
+    expect(JSON.stringify(log.calls.allArgs())).not.toContain("PRIVATE-PROVIDER-DETAIL");
+  });
+
+  it("refuses non-owner diagnostic callers before any provider call", async () => {
+    const fake = spyOn(globalThis, "fetch");
+    await expectAsync(verifySandboxSync({days: 30}, {caller: {sameOwner: false, appId: "other", name: "Other", stage: "prod"}} as any)).toBeRejectedWithError("Owner-only diagnostic.");
+    expect(fake).not.toHaveBeenCalled();
   });
 });

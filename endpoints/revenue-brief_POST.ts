@@ -4,6 +4,7 @@ import { schema, type OutputType } from "./revenue-brief_POST.schema";
 import { db } from "../helpers/db";
 import { sql } from "kysely";
 import { createHash } from "node:crypto";
+import { validateRevenueBrief } from "../helpers/validateRevenueBrief";
 
 class RateLimitExceeded extends Error {}
 
@@ -32,7 +33,7 @@ async function reserveAiRequest(request: Request): Promise<boolean> {
     return true;
   } catch (error) {
     if (error instanceof RateLimitExceeded) return false;
-    console.error("AI usage budget is unavailable", error);
+    console.error("AI usage budget is unavailable");
     throw new Error("AI_USAGE_STORE_UNAVAILABLE"); // Fail closed, without charging credits.
   }
 }
@@ -99,21 +100,8 @@ export async function handle(request: Request) {
       max_output_tokens: 1400,
     });
 
-    const parsed = extractJson(extractText(result));
-    const output: OutputType = {
-      whatChanged: String(parsed.whatChanged ?? ""),
-      investigation: String(parsed.investigation ?? ""),
-      whatNext: String(parsed.whatNext ?? ""),
-      risks: Array.isArray(parsed.risks) ? parsed.risks.map(String).slice(0, 3) : [],
-      opportunities: Array.isArray(parsed.opportunities) ? parsed.opportunities.map(String).slice(0, 3) : [],
-      actions: Array.isArray(parsed.actions) ? parsed.actions.slice(0, 3).map((a: any) => ({
-        action: String(a.action ?? ""),
-        rationale: String(a.rationale ?? ""),
-        confidence: ["High", "Medium", "Low"].includes(a.confidence) ? a.confidence : "Medium",
-      })) : [],
-      guardrail: String(parsed.guardrail ?? "Validate hypotheses against payment-level evidence before operational changes."),
-      model: "gpt-6-luna via Floot AI",
-    };
+    const validated = validateRevenueBrief(extractJson(extractText(result)));
+    const output: OutputType = { ...validated, model: "gpt-6-luna via Floot AI" };
     return new Response(superjson.stringify(output), { headers: { "Content-Type": "application/json" } });
   } catch (error) {
     if (error instanceof Error && error.message === "AI_USAGE_STORE_UNAVAILABLE") {
@@ -128,9 +116,9 @@ export async function handle(request: Request) {
         code: "OUT_OF_CREDITS",
       }), { status: 503 });
     }
-    console.error(error);
+    console.error("Revenue brief generation failed");
     return new Response(superjson.stringify({
-      error: error instanceof Error ? error.message : "Could not generate revenue brief.",
+      error: "Could not generate a complete revenue brief. Please try again.",
       code: "AI_BRIEF_FAILED",
     }), { status: 400 });
   }
